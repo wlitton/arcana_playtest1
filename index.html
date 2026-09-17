@@ -785,11 +785,11 @@
 
   function activeBoostFor(pIndex){
     const play=currentPlayFor(pIndex); if(!play) return 0;
-    return play.effects.filter(e=>e.card.effect==='boost'&&!e.disabled&&!e.destroyed).reduce((s,e)=>s+e.card.value,0);
+    return play.effects.filter(e=>e.card.effect==='boost'&&!e.disabled&&!e.destroyed&&!e.nullified).reduce((s,e)=>s+e.card.value,0);
   }
   function effectivePower(play){
     if(!play || !play.unit || state.forcedNoUnitLoss.has(play.player)) return -Infinity;
-    return play.unit.value + play.effects.filter(e=>e.card.effect==='boost'&&!e.disabled&&!e.destroyed).reduce((s,e)=>s+e.card.value,0);
+    return play.unit.value + play.effects.filter(e=>e.card.effect==='boost'&&!e.disabled&&!e.destroyed&&!e.nullified).reduce((s,e)=>s+e.card.value,0);
   }
 
   function resolveTrick(){
