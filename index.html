@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Arcana Card Game Playtest</title>
+<style>
+  :root{
+    --void:#090712; --void2:#131027; --panel:#171329; --panel2:#221a39;
+    --ink:#f4eedf; --muted:#b7aec8; --gold:#d9b75f; --gold2:#f2dc8a;
+    --violet:#7c5cff; --red:#b43c4d; --card:#efe7d3; --card2:#d9ceb5;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:#08070f;color:var(--ink);font-family:Georgia,"Times New Roman",serif}
+  body{background:radial-gradient(circle at 50% -10%,#30224d 0,#151126 36%,#08070f 78%);overflow-x:hidden}
+  button{font:inherit;cursor:pointer}
+  .app{max-width:1320px;margin:0 auto;padding:10px}
+
+  .topbar{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0 10px}
+  .roundPill,.btn{height:40px;border:1px solid rgba(230,205,130,.34);background:linear-gradient(#211a37,#151126);color:#f5edd9;border-radius:9px;padding:0 14px;font-weight:800;box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 4px 14px rgba(0,0,0,.3)}
+  .roundPill{display:flex;align-items:center;letter-spacing:.04em;color:var(--gold2)}
+  .btn:hover{border-color:var(--gold);filter:brightness(1.08)}
+  .btn.primary{background:linear-gradient(#5f48c9,#3e2e91)}
+  .btn.danger{background:linear-gradient(#923444,#652431)}
+  .btn:disabled{opacity:.36;cursor:not-allowed;filter:none}
+
+  .tableWrap{position:relative;padding:14px;border-radius:30px;background:linear-gradient(135deg,#2c203d,#140f21 42%,#372342);box-shadow:0 24px 80px rgba(0,0,0,.55),inset 0 0 0 1px rgba(231,201,116,.18)}
+  .table{position:relative;height:720px;border-radius:22px;overflow:hidden;background:
+    radial-gradient(circle at 50% 50%,rgba(114,79,162,.14),transparent 35%),
+    radial-gradient(circle at 16% 16%,rgba(217,183,95,.08),transparent 22%),
+    linear-gradient(145deg,#171128,#0e0b19 55%,#19102b);
+    border:1px solid rgba(224,195,113,.26);box-shadow:inset 0 0 80px rgba(0,0,0,.68)}
+  .feltTexture{position:absolute;inset:0;opacity:.22;pointer-events:none;background:
+    repeating-linear-gradient(60deg,transparent 0 22px,rgba(217,183,95,.035) 22px 23px),
+    repeating-linear-gradient(-60deg,transparent 0 22px,rgba(124,92,255,.028) 22px 23px)}
+  .table:before{content:"✦";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:430px;line-height:1;color:rgba(217,183,95,.025);pointer-events:none}
+
+  .seat{position:absolute;z-index:4;width:224px}
+  .seat.north{top:12px;left:50%;transform:translateX(-50%)}
+  .seat.south{bottom:12px;left:50%;transform:translateX(-50%)}
+  .seat.west{left:12px;top:50%;transform:translateY(-50%)}
+  .seat.east{right:12px;top:50%;transform:translateY(-50%)}
+  .playerBox{background:linear-gradient(145deg,rgba(27,20,44,.96),rgba(12,10,22,.96));border:1px solid rgba(219,185,95,.28);border-radius:13px;padding:8px 10px;box-shadow:0 9px 24px rgba(0,0,0,.42),inset 0 0 18px rgba(124,92,255,.035)}
+  .playerBox.active{border-color:var(--gold2);box-shadow:0 0 0 2px rgba(217,183,95,.18),0 0 22px rgba(217,183,95,.14),0 9px 24px rgba(0,0,0,.42)}
+  .playerBox.eliminated{opacity:.46;filter:grayscale(.55)}
+  .playerName{display:flex;justify-content:space-between;gap:8px;font-weight:800;font-size:14px;color:#fff8e8}
+  .playerName span:last-child{color:var(--gold2)}
+  .playerMeta{display:flex;justify-content:space-between;align-items:center;margin-top:5px;color:var(--muted);font-size:11px}
+  .handBadge{display:inline-flex;align-items:center;gap:6px;font-weight:800;color:#f7f1e6}
+  .handIcon{position:relative;width:28px;height:21px}
+  .handIcon i{position:absolute;width:15px;height:20px;border-radius:2px;background:#e8dec7;border:1px solid #a59576}
+  .handIcon i:nth-child(1){left:1px;transform:rotate(-12deg)}.handIcon i:nth-child(2){left:6px}.handIcon i:nth-child(3){left:11px;transform:rotate(12deg)}
+  .shieldRow{display:flex;justify-content:center;gap:4px;flex-wrap:wrap;margin-top:7px;min-height:21px}
+  .shield{width:22px;height:31px;border-radius:5px;background:linear-gradient(145deg,#2a1e55,#120d2b);border:1px solid #9473e8;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05),0 2px 4px #000;display:flex;align-items:center;justify-content:center}
+  .shield:after{content:"";display:block;width:12px;height:15px;background-repeat:no-repeat;background-position:center;background-size:contain;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"><path d="M50 4 C64 16 77 20 94 20 V56 C94 79 82 97 50 116 C18 97 6 79 6 56 V20 C23 20 36 16 50 4 Z" fill="none" stroke="%23e5d58e" stroke-width="8" stroke-linejoin="miter" stroke-linecap="round"/></svg>')}
+  .shield.broken{background:#14121a;border-color:#312b3d;opacity:.28}.shield.broken:after{opacity:.18}
+  .shield.saver{background:linear-gradient(145deg,#5b3418,#28180e);border-color:#d59a48}.shield.saver:after{background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"><path d="M50 4 C64 16 77 20 94 20 V56 C94 79 82 97 50 116 C18 97 6 79 6 56 V20 C23 20 36 16 50 4 Z" fill="none" stroke="%23ffcf76" stroke-width="8" stroke-linejoin="miter" stroke-linecap="round"/></svg>')}
+
+  .centerZone{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:56%;height:420px;z-index:2;pointer-events:none}
+  .trickGrid{position:relative;width:100%;height:100%}
+  .trickSlot{position:absolute;width:132px;min-height:126px;text-align:center;transition:.15s;pointer-events:none}
+  .trickSlot.north{top:2px;left:50%;transform:translateX(-50%)}
+  .trickSlot.south{bottom:2px;left:50%;transform:translateX(-50%)}
+  .trickSlot.west{left:2px;top:50%;transform:translateY(-50%)}
+  .trickSlot.east{right:2px;top:50%;transform:translateY(-50%)}
+  .trickSlot.turn .powerTotal{color:#fff0a5;text-shadow:0 0 18px rgba(241,211,113,.45)}
+  .powerCaption{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#a99fba;margin-bottom:-2px}
+  .powerTotal{font-size:38px;line-height:1;font-weight:900;color:var(--gold2);text-shadow:0 2px 7px #000}
+  .playRow{display:flex;align-items:flex-end;justify-content:center;gap:5px;margin-top:6px;min-height:68px}
+  .miniUnit{width:46px;height:64px;border-radius:7px;background:linear-gradient(160deg,#eee4ca,#cfc3a8);border:1px solid #9d8d70;color:#17131d;box-shadow:0 4px 10px #000;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:900}
+  .miniUnit.empty{font-size:10px;color:#786f81;background:rgba(8,7,15,.45);border:1px dashed #554a65;box-shadow:none}
+  .effectStack{display:flex;align-items:flex-end;gap:3px;max-width:78px;overflow:visible}
+  .effectMini{width:38px;height:54px;border-radius:6px;background:linear-gradient(160deg,#2b1f47,#171126);border:1px solid #7f68ba;color:#f7edcf;box-shadow:0 3px 9px #000;padding:4px 2px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9px;font-weight:800;line-height:1.05}
+  .effectMini.boost{background:linear-gradient(160deg,#5c3a17,#2d1c0d);border-color:#bc8740;font-size:17px;color:#ffdd8a}
+  .effectMini.disabled,.effectMini.destroyed{opacity:.34;text-decoration:line-through;filter:grayscale(.6)}
+
+  .status{display:none!important}
+  .turnResult{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10;width:min(300px,64%);text-align:center;pointer-events:auto}
+  .turnResult.show{display:block}
+  .turnResultText{font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:900;line-height:1.25;color:#fff4c4;text-shadow:0 2px 8px #000,0 0 14px rgba(240,198,80,.25);margin-bottom:10px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .turnLossRow{display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:1000;letter-spacing:.02em}
+  .turnLossName{color:#fff4c4}
+  .turnLossAmt{color:#ff7b84}
+  .turnLossShield{display:inline-block;width:14px;height:18px;background-repeat:no-repeat;background-position:center;background-size:contain;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"><path d="M50 4 C64 16 77 20 94 20 V56 C94 79 82 97 50 116 C18 97 6 79 6 56 V20 C23 20 36 16 50 4 Z" fill="none" stroke="%23ff5b66" stroke-width="10" stroke-linejoin="miter" stroke-linecap="round"/></svg>');filter:drop-shadow(0 0 5px rgba(255,91,102,.35))}
+  .turnLossElim{color:#ff9a66;font-size:13px;letter-spacing:.08em}
+  .turnLossNone{font-size:15px}
+  .turnResult .btn{min-width:112px;padding:9px 14px}
+  .banner{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:12;width:min(520px,84%);padding:20px;border-radius:15px;background:#18112b;border:1px solid #c9a954;text-align:center;box-shadow:0 18px 55px rgba(0,0,0,.62)}.banner.show{display:block}.banner strong{font-size:21px}.small{font-size:12px;color:var(--muted)}
+  .targetBox{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:15;width:min(500px,88%);background:#1b132b;border:1px solid #8b6cce;border-radius:14px;padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.6)}.targetBox.show{display:block}.targetButtons{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.targetBtn{border:1px solid #8c6cc9;background:#342454;color:white;border-radius:8px;padding:8px 10px}
+
+  .humanHandWrap{position:relative;width:100%;margin:10px auto 0;padding:8px 8px 2px;border-radius:18px;background:linear-gradient(180deg,rgba(30,22,48,.82),rgba(12,9,21,.95));border:1px solid rgba(217,183,95,.18);overflow:visible}
+  .handTitle{display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:4px;font-weight:800;color:#efe6d2}
+  .hand{display:flex;justify-content:center;align-items:flex-end;min-height:168px;overflow-x:auto;overflow-y:visible;padding:18px 26px 8px;scrollbar-width:thin}
+  .card{flex:0 0 98px;width:98px;height:142px;margin-left:-34px;border-radius:10px;border:1px solid #a69776;background:linear-gradient(160deg,#efe7d3,#cfc1a1);color:#17131d;padding:8px;display:flex;flex-direction:column;align-items:center;box-shadow:0 7px 16px rgba(0,0,0,.45);transition:.15s transform,.15s filter,.15s box-shadow,.15s opacity;position:relative;z-index:1}
+  .card:first-child{margin-left:0}.card:hover:not(:disabled){transform:translateY(-9px);z-index:20}
+  .card.effect{background:linear-gradient(160deg,#2a2042,#171126);color:#f6edd8;border-color:#74609f}.card.shieldCard{background:linear-gradient(160deg,#4b2f18,#25170d);border-color:#b9833f}
+  .card.unplayable{opacity:.43;cursor:not-allowed}.card.effectChoice{box-shadow:0 0 0 2px rgba(232,201,110,.72),0 0 18px rgba(232,201,110,.28)}
+  .card.selected{transform:translateY(-22px) scale(1.12)!important;z-index:60;box-shadow:0 15px 28px rgba(0,0,0,.7),0 0 0 2px var(--gold2)}
+  .corner{position:absolute;left:7px;top:5px;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:1000;line-height:1;color:#16121a;text-align:left;z-index:2}.card.effect .corner,.card.shieldCard .corner{color:#f6e8bd}
+  .corner small{display:block;font-size:7px;letter-spacing:.05em;margin-top:2px;opacity:.72}
+  .cardType{font-size:9px;font-weight:900;letter-spacing:.13em;text-transform:uppercase;margin-top:2px;opacity:.68}.cardBig{font-family:Inter,Arial,sans-serif;font-size:47px;font-weight:1000;line-height:1;margin:auto 0}.cardLabel{font-family:Inter,Arial,sans-serif;font-size:14px;font-weight:1000;text-align:center;line-height:1.02;margin:auto 0}.cardDesc{font-size:8px;text-align:center;line-height:1.1;min-height:18px;display:flex;align-items:flex-end;opacity:.82}.cardDesc:empty{min-height:0}
+
+  .modalBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.74);z-index:50;align-items:center;justify-content:center;padding:18px}.modalBackdrop.show{display:flex}.modal{width:min(760px,96vw);max-height:84vh;overflow:auto;background:#141022;border:1px solid rgba(217,183,95,.28);border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.72)}.modalHead{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:#20172f;border-bottom:1px solid rgba(217,183,95,.18);z-index:2}.modalHead h2{margin:0;font-size:19px;color:var(--gold2)}.closeBtn{border:1px solid rgba(217,183,95,.25);background:#312447;color:white;width:34px;height:34px;border-radius:8px;font-size:20px}.modalBody{padding:15px;color:#ded5e8;line-height:1.55;font-size:14px}.modalBody p{margin:0 0 10px}.log{font-size:13px}.logEntry{padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.06)}.logEntry.good{color:#c6f0cf}.logEntry.bad{color:#f2b9be}.logEntry.info{color:#c9c2ff}.logEntry.muted{color:#b7aec8}
+
+  @media(max-width:780px){
+    .app{padding:6px}.topbar{gap:5px}.btn,.roundPill{height:36px;padding:0 9px;font-size:11px}
+    .tableWrap{padding:7px;border-radius:18px}.table{height:620px;border-radius:14px}
+    .seat{width:154px}.seat.north{top:7px}.seat.south{bottom:7px}.seat.west{left:6px}.seat.east{right:6px}
+    .playerBox{padding:6px 7px;border-radius:10px}.playerName{font-size:11px}.playerMeta{font-size:9px;margin-top:3px}.handIcon{transform:scale(.8);transform-origin:left center}.handBadge{gap:2px}.shieldRow{gap:3px;margin-top:4px}.shield{width:18px;height:26px}.shield:after{font-size:10px;line-height:1}
+    .centerZone{width:56%;height:330px}.trickSlot{width:96px;min-height:100px}.powerCaption{font-size:7px}.powerTotal{font-size:30px}.playRow{min-height:55px;margin-top:3px}.miniUnit{width:38px;height:52px;font-size:22px}.effectMini{width:31px;height:45px;font-size:7px}.effectMini.boost{font-size:14px}.effectStack{max-width:65px}
+    .status{width:38%;font-size:9px;padding:6px 7px}.humanHandWrap{margin-top:7px;padding:5px 2px}.handTitle{font-size:12px;gap:6px}.hand{justify-content:flex-start;min-height:150px;padding:18px 18px 6px}.card{flex-basis:88px;width:88px;height:128px;margin-left:-46px}.card:first-child{margin-left:0}.card.selected{transform:translateY(-18px) scale(1.1)!important}.cardBig{font-size:42px}.cardLabel{font-size:12px}.corner{font-size:14px}
+  }
+  @media(max-width:460px){
+    .table{height:570px}.seat{width:124px}.seat.west,.seat.east{top:52%}.playerName{font-size:10px}.playerMeta span:last-child{display:none}.shield{width:17px;height:25px}.shield:after{line-height:1;font-size:9px}
+    .centerZone{width:52%;height:300px}.trickSlot{width:82px}.powerTotal{font-size:27px}.miniUnit{width:34px;height:47px;font-size:20px}.effectMini{width:28px;height:41px}.status{top:49%;width:34%;font-size:8px}
+    .humanHandWrap{border-radius:12px}.handTitle{justify-content:flex-start;padding-left:8px;flex-wrap:wrap}.hand{min-height:145px;padding-left:12px}.card{flex-basis:84px;width:84px;height:122px;margin-left:-50px}.card:first-child{margin-left:0}
+  }
+
+  /* --- Edge HUD + mobile hand fixes --- */
+  .seat{z-index:5}
+  .seat.west,.seat.east{width:76px;top:50%}
+  .seat.west{left:7px}.seat.east{right:7px}
+  .seat.north,.seat.south{width:220px}
+  .playerBox{background:transparent;border:0;box-shadow:none;padding:0;color:white}
+  .playerBox.active{border:0;box-shadow:none;filter:drop-shadow(0 0 7px rgba(242,220,138,.42))}
+  .playerName{font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.1;color:white;text-shadow:0 2px 4px #000;justify-content:center;gap:7px}
+  .playerName span:last-child{color:white}
+  .playerMeta{justify-content:center;gap:7px;margin-top:3px;color:white;font-family:Inter,Arial,sans-serif;font-size:10px;text-shadow:0 2px 4px #000}
+  .handBadge{position:relative;width:31px;height:24px;display:inline-flex;align-items:center;justify-content:center;color:#111;font:900 11px/1 Inter,Arial,sans-serif;text-shadow:none}
+  .handIcon{position:absolute;inset:0;width:31px;height:24px;z-index:-1}
+  .handIcon i{width:16px;height:22px;background:#f0e9d8}
+  .handIcon i:nth-child(1){left:2px}.handIcon i:nth-child(2){left:7px}.handIcon i:nth-child(3){left:12px}
+  .shieldRow{margin-top:5px;gap:4px;flex-wrap:nowrap}
+  .seat.west .playerBox,.seat.east .playerBox{display:flex;flex-direction:column;align-items:center}
+  .seat.west .playerName,.seat.east .playerName{flex-direction:column;align-items:center;gap:2px;font-size:10px;text-align:center}
+  .seat.west .playerMeta,.seat.east .playerMeta{flex-direction:column;gap:3px;font-size:9px}
+  .seat.west .shieldRow,.seat.east .shieldRow{flex-direction:column;align-items:center;margin-top:6px}
+  .seat.west .shield,.seat.east .shield{width:20px;height:29px}
+  .seat.west .shield:after,.seat.east .shield:after{line-height:1}
+  .seat.north .shieldRow,.seat.south .shieldRow{justify-content:center}
+  .seat.north .shield,.seat.south .shield{width:20px;height:29px}
+  .centerZone{width:68%;height:430px}
+  .trickSlot.west{left:46px}.trickSlot.east{right:46px}
+
+  .card.selected{transform:translateY(-28px)!important;z-index:25;box-shadow:0 15px 28px rgba(0,0,0,.7),0 0 0 2px var(--gold2)}
+  .card.selected:hover{transform:translateY(-28px)!important}
+
+  @media(max-width:780px){
+    .seat.west,.seat.east{width:48px}.seat.west{left:3px}.seat.east{right:3px}
+    .seat.north,.seat.south{width:170px}
+    .seat.west .playerName,.seat.east .playerName{font-size:8px}.seat.west .playerMeta,.seat.east .playerMeta{font-size:8px}
+    .seat.west .shield,.seat.east .shield{width:17px;height:25px}.seat.west .shield:after,.seat.east .shield:after{line-height:1}
+    .seat.north .shield,.seat.south .shield{width:17px;height:25px}
+    .centerZone{width:74%;height:345px}
+    .trickSlot.west{left:18px}.trickSlot.east{right:18px}
+    .card.selected{transform:translateY(-24px)!important}
+  }
+  @media(max-width:460px){
+    .table{height:590px}
+    .seat.west,.seat.east{width:42px}.seat.west{left:1px}.seat.east{right:1px}
+    .seat.north,.seat.south{width:150px}
+    .seat.west .playerName .pname,.seat.east .playerName .pname{display:none}
+    .seat.west .playerName,.seat.east .playerName{font-size:8px}
+    .seat.west .shield,.seat.east .shield{width:16px;height:24px}.seat.west .shield:after,.seat.east .shield:after{line-height:1}
+    .centerZone{width:78%;height:320px}
+    .trickSlot.west{left:4px}.trickSlot.east{right:4px}
+    .status{width:42%;font-size:8px}
+    .card.selected{transform:translateY(-22px)!important}
+  }
+
+
+  /* --- Mobile HUD readability pass --- */
+  @media(max-width:780px){
+    .seat.north,.seat.south{width:210px}
+    .seat.north .playerName,.seat.south .playerName{
+      flex-wrap:nowrap;white-space:nowrap;justify-content:center;gap:8px;font-size:10px
+    }
+    .seat.north .playerMeta,.seat.south .playerMeta{
+      margin-top:4px;gap:8px;white-space:nowrap
+    }
+    .seat.north .handBadge,.seat.south .handBadge{flex:0 0 auto}
+
+    .seat.west,.seat.east{width:56px}
+    .seat.west{left:2px}.seat.east{right:2px}
+    .seat.west .playerBox,.seat.east .playerBox{width:56px;overflow:visible}
+    .seat.west .playerName,.seat.east .playerName{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      width:56px;gap:1px;font-size:8px;line-height:1.05;text-align:center;white-space:normal
+    }
+    .seat.west .playerName .pname,.seat.east .playerName .pname{
+      display:block;max-width:56px;overflow:visible;word-break:normal
+    }
+    .seat.west .playerMeta,.seat.east .playerMeta{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      width:56px;margin-top:5px;gap:2px
+    }
+    .seat.west .playerMeta>span:last-child,.seat.east .playerMeta>span:last-child{display:none}
+    .seat.west .handBadge,.seat.east .handBadge{
+      width:27px;height:22px;margin:0 0 3px 0;flex:0 0 auto
+    }
+    .seat.west .handIcon,.seat.east .handIcon{width:27px;height:22px}
+    .seat.west .handIcon i,.seat.east .handIcon i{width:14px;height:20px}
+    .seat.west .handIcon i:nth-child(1),.seat.east .handIcon i:nth-child(1){left:1px}
+    .seat.west .handIcon i:nth-child(2),.seat.east .handIcon i:nth-child(2){left:6px}
+    .seat.west .handIcon i:nth-child(3),.seat.east .handIcon i:nth-child(3){left:11px}
+    .seat.west .shieldRow,.seat.east .shieldRow{margin-top:2px;gap:3px}
+
+    .centerZone{width:66%;height:345px}
+    .trickSlot.west{left:0}.trickSlot.east{right:0}
+  }
+
+  @media(max-width:460px){
+    .seat.north,.seat.south{width:205px}
+    .seat.north .playerName,.seat.south .playerName{font-size:9px;gap:6px}
+    .seat.north .playerMeta,.seat.south .playerMeta{font-size:8px}
+
+    .seat.west,.seat.east{width:52px}
+    .seat.west .playerBox,.seat.east .playerBox{width:52px}
+    .seat.west .playerName,.seat.east .playerName{width:52px;font-size:7.5px}
+    .seat.west .playerName .pname,.seat.east .playerName .pname{max-width:52px}
+    .seat.west .playerMeta,.seat.east .playerMeta{width:52px}
+    .seat.west .shield,.seat.east .shield{width:16px;height:24px}
+
+    .centerZone{width:64%;height:315px}
+    .trickSlot{width:78px}
+    .trickSlot.west{left:0}.trickSlot.east{right:0}
+  }
+
+  /* --- Mobile HUD counter visibility fix --- */
+  .handBadge{z-index:0;position:relative}
+  .handIcon{z-index:0!important}
+  .handBadge{isolation:isolate}
+
+  .handBadge .handNumber{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#111;font:900 10px/1 Inter,Arial,sans-serif;text-shadow:none;pointer-events:none}
+  .handBadge .handIcon{z-index:1!important}
+  .handBadge .handIcon{pointer-events:none}
+
+  @media(max-width:780px){
+    .playerMeta>span:last-child{display:inline-block!important;color:#fff!important;font-weight:800;text-shadow:0 2px 4px #000}
+    .seat.north .playerMeta,.seat.south .playerMeta{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:10px!important;min-height:26px}
+    .seat.west .playerMeta,.seat.east .playerMeta{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;min-height:42px}
+    .seat.west .playerMeta>span:last-child,.seat.east .playerMeta>span:last-child{display:inline-block!important;font-size:7px!important;line-height:1!important;white-space:nowrap!important}
+    .handBadge{width:31px!important;height:24px!important;min-width:31px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;color:#111!important;font:900 10px/1 Inter,Arial,sans-serif!important}
+    .handIcon{display:block!important;width:31px!important;height:24px!important;opacity:1!important}
+    .handIcon i{display:block!important;opacity:1!important}
+  }
+
+  @media(max-width:460px){
+    .seat.north .playerMeta,.seat.south .playerMeta{font-size:8px!important;gap:8px!important}
+    .seat.west .playerMeta,.seat.east .playerMeta{min-height:40px!important}
+    .seat.west .playerMeta>span:last-child,.seat.east .playerMeta>span:last-child{font-size:6.5px!important}
+  }
+
+  /* Robust hand-count badge: one icon surface + an always-visible centered count. */
+  .handBadge{
+    position:relative!important;display:inline-block!important;width:34px!important;height:27px!important;
+    min-width:34px!important;flex:0 0 34px!important;overflow:visible!important;isolation:isolate!important;
+    transform:none!important;opacity:1!important;visibility:visible!important;
+  }
+  .handBadge .handIcon{
+    position:absolute!important;inset:0!important;width:34px!important;height:27px!important;
+    display:block!important;transform:none!important;opacity:1!important;visibility:visible!important;z-index:1!important;
+    background-repeat:no-repeat!important;background-position:center!important;background-size:contain!important;
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 54"><rect x="5" y="8" width="29" height="40" rx="4" fill="%23e8dec7" stroke="%239b8b6e" stroke-width="2" transform="rotate(-10 19 28)"/><rect x="20" y="6" width="29" height="42" rx="4" fill="%23f2ead8" stroke="%239b8b6e" stroke-width="2"/><rect x="34" y="8" width="29" height="40" rx="4" fill="%23e8dec7" stroke="%239b8b6e" stroke-width="2" transform="rotate(10 49 28)"/></svg>')!important;
+    pointer-events:none!important;
+  }
+  .handBadge .handIcon i{display:none!important}
+  .handBadge .handNumber{
+    position:absolute!important;inset:0!important;z-index:20!important;display:grid!important;place-items:center!important;
+    width:34px!important;height:27px!important;margin:0!important;padding:0!important;overflow:visible!important;
+    color:%23100d14!important;font:900 11px/27px Inter,Arial,sans-serif!important;text-align:center!important;
+    text-shadow:0 1px 0 rgba(255,255,255,.45)!important;opacity:1!important;visibility:visible!important;
+    transform:none!important;pointer-events:none!important;
+  }
+  @media(max-width:780px){
+    .handBadge,.seat.west .handBadge,.seat.east .handBadge,.seat.north .handBadge,.seat.south .handBadge{
+      width:34px!important;height:27px!important;min-width:34px!important;flex-basis:34px!important;transform:none!important;
+    }
+    .handBadge .handIcon,.seat.west .handIcon,.seat.east .handIcon{width:34px!important;height:27px!important;transform:none!important}
+    .handBadge .handNumber{display:grid!important;opacity:1!important;visibility:visible!important;color:%23100d14!important}
+  }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div id="roundTop" class="roundPill">Round 0 / 4</div>
+    <button id="rulesBtn" class="btn">Rules</button>
+    <button id="logBtn" class="btn">Game Log</button>
+    <button id="newMatchBtn" class="btn primary">Start Match</button>
+  </div>
+
+  <div class="tableWrap">
+    <div class="table">
+      <div class="feltTexture"></div>
+      <div id="banner" class="banner"></div>
+      <div id="status" class="status">Press Start Match to begin.</div>
+
+      <div id="seatNorth" class="seat north"></div>
+      <div id="seatWest" class="seat west"></div>
+      <div id="seatEast" class="seat east"></div>
+      <div id="seatSouth" class="seat south"></div>
+
+      <div class="centerZone">
+        <div id="arena" class="trickGrid"></div>
+        <div id="turnResult" class="turnResult">
+          <div id="turnResultText" class="turnResultText"></div>
+          <button id="nextBtn" class="btn primary" disabled>Next Turn</button>
+        </div>
+      </div>
+
+      <div id="targetBox" class="targetBox">
+        <strong id="targetPrompt">Choose a target.</strong>
+        <div id="targetButtons" class="targetButtons"></div>
+        <button id="cancelTarget" class="btn" style="margin-top:10px">Cancel</button>
+      </div>
+
+    </div>
+    <div class="humanHandWrap">
+      <div class="handTitle"><span>Your hand</span><span id="handCount" class="small"></span><span id="actionHint" class="small"></span></div>
+      <div id="hand" class="hand"></div>
+    </div>
+  </div>
+</div>
+
+<div id="rulesModal" class="modalBackdrop">
+  <div class="modal">
+    <div class="modalHead"><h2>Rules & How to Play</h2><button class="closeBtn" data-close="rulesModal">×</button></div>
+    <div class="modalBody">
+      <h3>Overall</h3>
+      <p>Each round uses a freshly shuffled 100-card deck. Every player starts with 5 face-down shields and 9 cards in hand.</p>
+      <p>There are 4 rounds. Player 1 starts Round 1, Player 2 starts Round 2, Player 3 starts Round 3, and Player 4 starts Round 4. Within each round, the lead rotates clockwise every turn. Eliminated players are skipped.</p>
+
+      <h3>Order of Play</h3>
+      <p><strong>1.</strong> The leader draws 1 card.</p>
+      <p><strong>2.</strong> Starting with the leader and moving clockwise, each player may play 1 effect.</p>
+      <p><strong>3.</strong> That player then plays 1 unit.</p>
+      <p><strong>4.</strong> A player may skip the effect and play a unit immediately.</p>
+      <p><strong>5.</strong> If a player has no unit after playing an effect, they may play a second effect instead, but they automatically lose that turn.</p>
+      <p><strong>6.</strong> After everyone has played, compare total power. The highest power wins. Ties for highest power also count as winners.</p>
+      <p><strong>7.</strong> Every losing player loses 1 shield.</p>
+
+      <h3>Effects</h3>
+      <p><strong>+1 to +4:</strong> Add that amount to your unit's power for the current turn.</p>
+      <p><strong>Draw 1 / Draw 2:</strong> Draw that many cards immediately.</p>
+      <p><strong>Shield Saver:</strong> Played as your effect and stays on your field as an extra shield.</p>
+      <p><strong>Negate:</strong> Has no target. It nullifies the next effect played later that turn, then is used up. If no later effect is played, it expires at the end of the turn.</p>
+      <p><strong>Destroy:</strong> Destroys itself and one valid previously played effect. It can also be nullified by Negate.</p>
+
+      <h3>Extra Rules</h3>
+      <p>Original face-down shields are always lost first and go into that player's hand. Shield Savers are lost only after all original shields are gone, and broken Shield Savers go to the discard pile.</p>
+      <p>Each shield broken is worth 1 point to every winner of that turn.</p>
+      <p>Once a player has no shields left, their next lost turn eliminates them from the round.</p>
+      <p>The last player standing ends the round. Scores carry across all 4 rounds, and the highest total score wins the match.</p>
+    </div>
+  </div>
+</div>
+
+<div id="logModal" class="modalBackdrop">
+  <div class="modal">
+    <div class="modalHead"><h2>Game Log</h2><button class="closeBtn" data-close="logModal">×</button></div>
+    <div class="modalBody"><div id="log" class="log"></div></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const PLAYER_NAMES = ['You', 'Computer 1', 'Computer 2', 'Computer 3'];
+  const state = {
+    deal: 0,
+    trick: 0,
+    deck: [],
+    discard: [],
+    players: [],
+    leader: 0,
+    turnOrder: [],
+    turnPos: 0,
+    phase: 'idle',
+    trickPlays: [],
+    pendingEffect: null,
+    pendingCardIndex: null,
+    effectPlayedThisTurn: 0,
+    forcedNoUnitLoss: new Set(),
+    scores: [0,0,0,0],
+    maxDeals: 4,
+    safetyTricks: 40,
+  };
+
+  const $ = id => document.getElementById(id);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  let selectedHandIndex = null;
+
+  function makeDeck(){
+    const d = [];
+    for(let n=1;n<=10;n++) for(let i=0;i<6;i++) d.push({type:'unit', name:`Unit ${n}`, value:n, id:uid()});
+    for(let n=1;n<=4;n++) for(let i=0;i<4;i++) d.push({type:'effect', effect:'boost', name:`+${n}`, value:n, persistent:true, id:uid()});
+    for(let i=0;i<4;i++) d.push({type:'effect', effect:'negate', name:'Negate Effect', persistent:false, id:uid()});
+    for(let i=0;i<4;i++) d.push({type:'effect', effect:'shield', name:'Shield Saver', persistent:false, id:uid()});
+    for(let i=0;i<4;i++) d.push({type:'effect', effect:'draw1', name:'Draw 1', value:1, persistent:false, id:uid()});
+    for(let i=0;i<4;i++) d.push({type:'effect', effect:'draw2', name:'Draw 2', value:2, persistent:false, id:uid()});
+    for(let i=0;i<8;i++) d.push({type:'effect', effect:'destroy', name:'Destroy Effect', persistent:false, id:uid()});
+    return shuffle(d);
+  }
+
+  function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
+  function shuffle(a){
+    for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+    return a;
+  }
+  function drawCard(pIndex, count=1){
+    const p=state.players[pIndex];
+    let drawn=0;
+    for(let i=0;i<count;i++){
+      if(!state.deck.length) break;
+      p.hand.push(state.deck.pop()); drawn++;
+    }
+    if(drawn) log(`${p.name} draws ${drawn} card${drawn===1?'':'s'}.`, 'muted');
+    render();
+    return drawn;
+  }
+
+  function initPlayers(){
+    state.players = PLAYER_NAMES.map((name,i)=>({name,hand:[],shields:5,shieldCards:[],shieldSavers:[],eliminated:false,index:i}));
+  }
+
+  function dealCards(){
+    for(let s=0;s<5;s++) for(let p=0;p<4;p++) if(state.deck.length) state.players[p].shieldCards.push(state.deck.pop());
+    for(let c=0;c<9;c++) for(let p=0;p<4;p++) if(state.deck.length) state.players[p].hand.push(state.deck.pop());
+  }
+
+  function newMatch(){
+    hideTurnResult();
+    selectedHandIndex=null;
+    state.deal=0; state.trick=0; state.scores=[0,0,0,0];
+    $('log').innerHTML=''; $('banner').classList.remove('show');
+    $('newMatchBtn').textContent='Restart Match';
+    $('newMatchBtn').classList.remove('primary');
+    $('newMatchBtn').classList.add('danger');
+    log('New four-round match started.', 'info');
+    startDeal();
+  }
+
+  function startDeal(){
+    hideTurnResult();
+    state.deal++;
+    if(state.deal>state.maxDeals){ finishMatch(); return; }
+    state.deck=makeDeck(); state.discard=[]; initPlayers(); dealCards();
+    state.trick=0;
+    state.leader=(state.deal-1)%4;
+    log(`Deal ${state.deal} begins. ${state.players[state.leader].name} has the opening lead.`, 'info');
+    startTrick(true);
+  }
+
+  function activePlayerIndexes(){return state.players.filter(p=>!p.eliminated).map(p=>p.index)}
+
+  async function startTrick(opening=false){
+    hideTurnResult();
+    const active=activePlayerIndexes();
+    if(active.length<=1){endDeal('Only one player remains.');return;}
+    if(state.trick>=state.safetyTricks){endDeal('Safety turn limit reached.');return;}
+    if(!canContinueDeal()){endDeal('No playable units remain to continue the deal.');return;}
+
+    state.trick++;
+    state.trickPlays=[];
+    state.pendingEffect=null;
+    state.pendingCardIndex=null;
+    state.forcedNoUnitLoss=new Set();
+
+    if(!active.includes(state.leader)){
+      let n=state.leader;
+      do { n=(n+1)%4; } while(!active.includes(n));
+      state.leader=n;
+    }
+    state.turnOrder=[];
+    for(let k=0;k<4;k++){
+      const idx=(state.leader+k)%4;
+      if(!state.players[idx].eliminated) state.turnOrder.push(idx);
+    }
+    state.turnPos=0;
+    log(`Turn ${state.trick} begins. ${state.players[state.leader].name} leads and draws 1.`, 'info');
+    drawCard(state.leader,1);
+    beginTurn();
+  }
+
+  function canContinueDeal(){
+    const active=activePlayerIndexes();
+    const anyUnit=active.some(i=>state.players[i].hand.some(c=>c.type==='unit'));
+    return anyUnit || state.deck.some(c=>c.type==='unit');
+  }
+
+  async function beginTurn(){
+    if(state.turnPos>=state.turnOrder.length){resolveTrick();return;}
+    const pIndex=state.turnOrder[state.turnPos];
+    state.effectPlayedThisTurn=0;
+    state.phase = pIndex===0 ? 'human-turn' : 'ai-turn';
+    render();
+    if(pIndex!==0){
+      await sleep(450);
+      await aiTurn(pIndex);
+      state.turnPos++;
+      beginTurn();
+    } else {
+      if(state.players[0].hand.length===0){
+        setStatus('You have no cards left. You will lose this turn.');
+        setTimeout(finishHumanTurn,300);
+        return;
+      }
+      setStatus('Your turn: play up to one effect, then a unit. You may play a unit immediately to skip your effect.');
+      render();
+    }
+  }
+
+  function currentPlayerIndex(){return state.turnOrder[state.turnPos]}
+  function currentPlayFor(pIndex){return state.trickPlays.find(x=>x.player===pIndex)}
+  function ensurePlay(pIndex){
+    let play=currentPlayFor(pIndex);
+    if(!play){play={player:pIndex,unit:null,effects:[]};state.trickPlays.push(play)}
+    return play;
+  }
+
+  function playableHumanCard(card){
+    if(state.phase!=='human-turn' || currentPlayerIndex()!==0 || state.pendingEffect) return false;
+    const play=ensurePlay(0);
+    if(card.type==='unit') return !play.unit;
+    if(play.unit) return false;
+    if(state.effectPlayedThisTurn===0) return true;
+    return state.effectPlayedThisTurn===1 && !state.players[0].hand.some(c=>c.type==='unit');
+  }
+
+  function humanCardClick(index){
+    if(state.phase!=='human-turn' || currentPlayerIndex()!==0) return;
+    const card=state.players[0].hand[index];
+    if(!card || !playableHumanCard(card)) return;
+    if(selectedHandIndex!==index){
+      selectedHandIndex=index;
+      renderHand();
+      setStatus('Card selected. Tap it again to play, or tap elsewhere to close it.');
+      return;
+    }
+    selectedHandIndex=null;
+    if(card.type==='unit'){
+      playUnit(0,index);
+      finishHumanTurn();
+      return;
+    }
+    playEffectInteractive(0,index);
+  }
+
+  function finishHumanTurn(){
+    const play=ensurePlay(0);
+    if(!play.unit) state.forcedNoUnitLoss.add(0);
+    state.phase='transition'; render();
+    state.turnPos++;
+    setTimeout(beginTurn,250);
+  }
+
+  function playUnit(pIndex, handIndex){
+    const p=state.players[pIndex];
+    const card=p.hand.splice(handIndex,1)[0];
+    ensurePlay(pIndex).unit=card;
+    log(`${p.name} plays Unit ${card.value}.`, pIndex===0?'good':'muted');
+    render();
+  }
+
+  function playEffectInteractive(pIndex, handIndex){
+    const card=state.players[pIndex].hand[handIndex];
+    if(card.effect==='destroy' && !findArmedNegate()){
+      const targets=getTargetsFor(card,pIndex);
+      if(!targets.length){
+        setStatus(`No valid target for ${card.name}. Choose another card.`);
+        return;
+      }
+      state.pendingEffect=card;
+      state.pendingCardIndex=handIndex;
+      showTargets(card,pIndex,targets);
+      render();
+    } else {
+      executeEffect(pIndex,handIndex,null);
+      afterHumanEffect();
+    }
+  }
+
+  function showTargets(card,pIndex,targets){
+    $('targetBox').classList.add('show');
+    $('targetPrompt').textContent=`Choose a target for ${card.name}`;
+    const wrap=$('targetButtons'); wrap.innerHTML='';
+    targets.forEach(t=>{
+      const b=document.createElement('button'); b.className='targetBtn';
+      b.textContent=`${state.players[t.owner].name}: ${t.card.name}`;
+      b.onclick=()=>{
+        $('targetBox').classList.remove('show');
+        executeEffect(pIndex,state.pendingCardIndex,t);
+        state.pendingEffect=null;state.pendingCardIndex=null;
+        afterHumanEffect();
+      };
+      wrap.appendChild(b);
+    });
+  }
+
+  $('cancelTarget').onclick=()=>{state.pendingEffect=null;state.pendingCardIndex=null;$('targetBox').classList.remove('show');render()};
+
+  function hasPlayableHumanEffect(){
+    return state.players[0].hand.some(card=>{
+      if(card.type!=='effect') return false;
+      if(card.effect!=='destroy') return true;
+      return !!findArmedNegate() || getTargetsFor(card,0).length>0;
+    });
+  }
+
+  function afterHumanEffect(){
+    selectedHandIndex=null;
+    state.effectPlayedThisTurn++;
+    const hasUnit=state.players[0].hand.some(c=>c.type==='unit');
+    const hasAnotherPlayableEffect=hasPlayableHumanEffect();
+    if(hasUnit){
+      setStatus('Effect resolved. Now play a unit.');
+    } else if(state.effectPlayedThisTurn<2 && hasAnotherPlayableEffect){
+      setStatus('You still have no unit. You may play one additional effect, then you will lose this turn.');
+    } else {
+      setStatus('No unit available. Your turn is complete and you will lose this turn.');
+      setTimeout(finishHumanTurn,300);
+    }
+    render();
+  }
+
+  function getTargetsFor(card,pIndex){
+    const targets=[];
+    if(card.effect!=='destroy') return targets;
+    for(const play of state.trickPlays){
+      for(const eff of play.effects){
+        if(eff.destroyed || eff.nullified) continue;
+        const isOpponentEffect = play.player!==pIndex && eff.card.persistent;
+        if(isOpponentEffect) targets.push({owner:play.player,effect:eff,card:eff.card});
+      }
+    }
+    return targets;
+  }
+
+  function findArmedNegate(){
+    for(const play of state.trickPlays){
+      for(const eff of play.effects){
+        if(eff.card.effect==='negate' && eff.armed && !eff.consumed && !eff.destroyed && !eff.nullified){
+          return {owner:play.player,effect:eff};
+        }
+      }
+    }
+    return null;
+  }
+
+  function executeEffect(pIndex,handIndex,target){
+    const p=state.players[pIndex];
+    const card=p.hand.splice(handIndex,1)[0];
+    const play=ensurePlay(pIndex);
+    const record={card,disabled:false,destroyed:false,target:null,armed:false,consumed:false,nullified:false};
+
+    const armedNegate=findArmedNegate();
+    if(armedNegate){
+      record.nullified=true;
+      play.effects.push(record);
+      armedNegate.effect.consumed=true;
+      log(`${p.name}'s ${card.name} is nullified by ${state.players[armedNegate.owner].name}'s Negate Effect.`, pIndex===0?'bad':'muted');
+      render();
+      return;
+    }
+
+    if(card.effect==='boost'){
+      play.effects.push(record);
+      log(`${p.name} plays ${card.name}.`, pIndex===0?'good':'muted');
+    } else if(card.effect==='shield'){
+      p.shieldSavers.push(card);
+      log(`${p.name} plays a Shield Saver. It is added behind the original shields (${p.shieldSavers.length} active).`, pIndex===0?'good':'muted');
+    } else if(card.effect==='draw1' || card.effect==='draw2'){
+      play.effects.push(record);
+      log(`${p.name} plays ${card.name}.`, pIndex===0?'good':'muted');
+      drawCard(pIndex,card.value);
+    } else if(card.effect==='negate'){
+      record.armed=true;
+      play.effects.push(record);
+      log(`${p.name} plays Negate Effect. The next effect played later this turn will be nullified.`, pIndex===0?'good':'muted');
+    } else if(card.effect==='destroy'){
+      play.effects.push(record);
+      record.destroyed=true;
+      if(target){
+        target.effect.destroyed=true;
+        log(`${p.name} destroys ${state.players[target.owner].name}'s ${target.card.name}.`, pIndex===0?'good':'muted');
+      } else {
+        log(`${p.name} plays Destroy Effect, but there is no valid target.`, 'muted');
+      }
+    }
+    render();
+  }
+
+  async function aiTurn(pIndex){
+    const p=state.players[pIndex];
+    ensurePlay(pIndex);
+    setStatus(`${p.name} is playing...`);
+
+    let effectIndex=chooseAiEffect(pIndex);
+    if(effectIndex>=0){
+      const card=p.hand[effectIndex];
+      let target=null;
+      if(card.effect==='destroy' && !findArmedNegate()){
+        const targets=getTargetsFor(card,pIndex);
+        if(targets.length) target=chooseBestTarget(card,pIndex,targets);
+        else effectIndex=-1;
+      }
+      if(effectIndex>=0){executeEffect(pIndex,effectIndex,target);state.effectPlayedThisTurn++;await sleep(320)}
+    }
+
+    let unitIndex=chooseAiUnit(pIndex);
+    if(unitIndex>=0){
+      playUnit(pIndex,unitIndex);
+      await sleep(300);
+    } else {
+      if(state.effectPlayedThisTurn<2){
+        const second=chooseAiEffect(pIndex,true);
+        if(second>=0){
+          const card=p.hand[second]; let target=null;
+          if(card.effect==='destroy' && !findArmedNegate()){
+            const targets=getTargetsFor(card,pIndex);
+            if(targets.length) target=chooseBestTarget(card,pIndex,targets); else target=null;
+          }
+          if(card.effect!=='destroy' || findArmedNegate() || target){executeEffect(pIndex,second,target);await sleep(250)}
+        }
+      }
+      state.forcedNoUnitLoss.add(pIndex);
+      log(`${p.name} has no unit and will lose this turn.`, 'bad');
+    }
+    render();
+  }
+
+  function chooseAiEffect(pIndex,second=false){
+    const p=state.players[pIndex];
+    const indexed=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.type==='effect');
+    if(!indexed.length) return -1;
+
+    // If no unit, strongly prefer draw effects first.
+    if(!p.hand.some(c=>c.type==='unit')){
+      const draw=indexed.filter(x=>x.c.effect==='draw2'||x.c.effect==='draw1').sort((a,b)=>(b.c.value||0)-(a.c.value||0));
+      if(draw.length) return draw[0].i;
+    }
+
+    const myBest=Math.max(0,...p.hand.filter(c=>c.type==='unit').map(c=>c.value));
+    const currentHigh=Math.max(0,...state.trickPlays.map(pl=>effectivePower(pl)));
+
+    const destroy=indexed.find(x=>x.c.effect==='destroy' && getTargetsFor(x.c,pIndex).length);
+    if(destroy && currentHigh>myBest && Math.random()<0.72) return destroy.i;
+    const laterPlayers = state.turnOrder.slice(state.turnPos+1).length;
+    const negate=indexed.find(x=>x.c.effect==='negate');
+    if(negate && laterPlayers>0 && !findArmedNegate() && Math.random()<0.42) return negate.i;
+
+    const boosts=indexed.filter(x=>x.c.effect==='boost').sort((a,b)=>b.c.value-a.c.value);
+    if(boosts.length && myBest>0){
+      const need=Math.max(0,currentHigh-myBest);
+      const enough=boosts.filter(x=>x.c.value>=need).sort((a,b)=>a.c.value-b.c.value);
+      if(need>0 && enough.length) return enough[0].i;
+      if(currentHigh>=8 && Math.random()<0.45) return boosts[0].i;
+      if(Math.random()<0.18) return boosts[boosts.length-1].i;
+    }
+
+    const saver=indexed.find(x=>x.c.effect==='shield');
+    if(saver && (p.shields<=2 || p.shieldSavers.length===0) && Math.random()<0.55) return saver.i;
+
+    const draw2=indexed.find(x=>x.c.effect==='draw2'); if(draw2 && p.hand.length<5 && Math.random()<0.7) return draw2.i;
+    const draw1=indexed.find(x=>x.c.effect==='draw1'); if(draw1 && p.hand.length<4 && Math.random()<0.6) return draw1.i;
+    return -1;
+  }
+
+  function chooseBestTarget(card,pIndex,targets){
+    return targets.slice().sort((a,b)=>targetValue(b)-targetValue(a))[0];
+  }
+  function targetValue(t){return t.card.effect==='boost' ? t.card.value : 1}
+
+  function chooseAiUnit(pIndex){
+    const p=state.players[pIndex];
+    const units=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.type==='unit');
+    if(!units.length) return -1;
+    const boost=activeBoostFor(pIndex);
+    const currentHigh=Math.max(0,...state.trickPlays.map(pl=>effectivePower(pl)));
+    const winners=units.filter(x=>x.c.value+boost>=currentHigh).sort((a,b)=>a.c.value-b.c.value);
+    if(winners.length) return winners[0].i;
+    return units.sort((a,b)=>a.c.value-b.c.value)[0].i;
+  }
+
+  function activeBoostFor(pIndex){
+    const play=currentPlayFor(pIndex); if(!play) return 0;
+    return play.effects.filter(e=>e.card.effect==='boost'&&!e.disabled&&!e.destroyed).reduce((s,e)=>s+e.card.value,0);
+  }
+  function effectivePower(play){
+    if(!play || !play.unit || state.forcedNoUnitLoss.has(play.player)) return -Infinity;
+    return play.unit.value + play.effects.filter(e=>e.card.effect==='boost'&&!e.disabled&&!e.destroyed).reduce((s,e)=>s+e.card.value,0);
+  }
+
+  function resolveTrick(){
+    state.phase='resolving';
+    const active=state.turnOrder;
+    const powers=active.map(i=>({i,p:effectivePower(currentPlayFor(i))}));
+    const highest=Math.max(...powers.map(x=>x.p));
+    const winners = Number.isFinite(highest) ? powers.filter(x=>x.p===highest).map(x=>x.i) : [];
+    const losers = powers.filter(x=>!winners.includes(x.i)).map(x=>x.i);
+    const outcomeEntries=[];
+
+    if(!winners.length){
+      log('No player produced a unit. No one scores this turn.', 'muted');
+    } else {
+      log(`Turn winners: ${winners.map(i=>state.players[i].name).join(', ')} at power ${highest}.`, 'good');
+    }
+
+    let shieldsActuallyBroken=0;
+    for(const i of losers){
+      const p=state.players[i];
+      if(p.eliminated) continue;
+      if(p.shields>0){
+        p.shields--;
+        const shieldCard=p.shieldCards.pop();
+        if(shieldCard) p.hand.push(shieldCard);
+        shieldsActuallyBroken++;
+        outcomeEntries.push({type:'shield', name:p.name});
+        log(`${p.name} loses an original shield${shieldCard?' and takes that shield card into hand':''}. ${p.shields} original shield${p.shields===1?'':'s'} remain${p.shieldSavers.length?` plus ${p.shieldSavers.length} Shield Saver${p.shieldSavers.length===1?'':'s'}`:''}.`, i===0?'bad':'muted');
+      } else if(p.shieldSavers.length>0){
+        const saver=p.shieldSavers.pop();
+        state.discard.push(saver);
+        shieldsActuallyBroken++;
+        outcomeEntries.push({type:'shield', name:p.name});
+        log(`${p.name} loses a Shield Saver. It is destroyed and sent to the discard pile. ${p.shieldSavers.length} Shield Saver${p.shieldSavers.length===1?'':'s'} remain.`, i===0?'bad':'muted');
+      } else {
+        p.eliminated=true;
+        outcomeEntries.push({type:'eliminated', name:p.name});
+        log(`${p.name} loses with no shields remaining and is eliminated from this deal.`, 'bad');
+      }
+    }
+
+    if(shieldsActuallyBroken>0 && winners.length){
+      winners.forEach(i=>state.scores[i]+=shieldsActuallyBroken);
+      log(`${winners.map(i=>state.players[i].name).join(' & ')} ${winners.length>1?'each score':'scores'} ${shieldsActuallyBroken} point${shieldsActuallyBroken===1?'':'s'} for broken shields.`, 'info');
+    }
+
+    // The lead always rotates clockwise after every trick, regardless of who won.
+    // Eliminated players are skipped. The opening leader for each new deal is still
+    // fixed by the deal number: Player 1, then 2, then 3, then 4.
+    {
+      const previousLeader = state.leader;
+      for(let step=1; step<=4; step++){
+        const candidate=(previousLeader+step)%4;
+        if(!state.players[candidate].eliminated){
+          state.leader=candidate;
+          break;
+        }
+      }
+    }
+
+    render();
+    const resultMarkup = outcomeEntries.length
+      ? outcomeEntries.map(entry=>entry.type==='shield'
+          ? `<div class="turnLossRow"><span class="turnLossName">${entry.name}</span><span class="turnLossAmt">-1</span><span class="turnLossShield" aria-hidden="true"></span></div>`
+          : `<div class="turnLossRow"><span class="turnLossName">${entry.name}</span><span class="turnLossElim">ELIMINATED</span></div>`
+        ).join('')
+      : '<div class="turnLossNone">No shields lost</div>';
+    if(activePlayerIndexes().length<=1){
+      setStatus('Round complete.');
+      state.phase='deal-end-ready';
+      showTurnResult(resultMarkup, state.deal>=state.maxDeals?'Finish Match':'Next Round', true);
+    } else {
+      setStatus(`Turn ${state.trick} complete.`);
+      state.phase='trick-end-ready';
+      showTurnResult(resultMarkup, 'Next Turn', true);
+    }
+  }
+
+  function endDeal(reason){
+    log(`Deal ${state.deal} ends: ${reason}`, 'info');
+    state.phase='deal-end-ready';
+    setStatus(`Deal ${state.deal} complete. ${reason}`);
+    render();
+    showTurnResult(reason, state.deal>=state.maxDeals?'Finish Match':'Next Round');
+  }
+
+  function continueGame(){
+    hideTurnResult();
+    if(state.phase==='trick-end-ready') startTrick();
+    else if(state.phase==='deal-end-ready'){
+      if(state.deal>=state.maxDeals) finishMatch(); else startDeal();
+    } else if(state.phase==='match-end') newMatch();
+  }
+
+  function finishMatch(){
+    state.phase='match-end';
+    const top=Math.max(...state.scores);
+    const winners=state.scores.map((s,i)=>({s,i})).filter(x=>x.s===top).map(x=>x.i);
+    const text=winners.length===1 ? `${state.players[winners[0]]?.name || PLAYER_NAMES[winners[0]]} wins the match with ${top} points!` : `Match tied: ${winners.map(i=>PLAYER_NAMES[i]).join(', ')} with ${top} points.`;
+    $('banner').innerHTML=`<strong>${text}</strong><div class="small" style="margin-top:6px">Final scores: ${PLAYER_NAMES.map((n,i)=>`${n} ${state.scores[i]}`).join(' · ')}</div>`;
+    $('banner').classList.add('show');
+    setStatus('Match complete. Start a new match to play again.');
+    hideTurnResult();
+    log(text, 'good');
+    render();
+  }
+
+  function setStatus(s){$('status').textContent=s}
+  function hideTurnResult(){
+    const box=$('turnResult'); if(box) box.classList.remove('show');
+    const btn=$('nextBtn'); if(btn) btn.disabled=true;
+  }
+  function showTurnResult(text, buttonText='Next Turn', isHtml=false){
+    if(isHtml) $('turnResultText').innerHTML=text;
+    else $('turnResultText').textContent=text;
+    $('nextBtn').textContent=buttonText;
+    $('nextBtn').disabled=false;
+    $('turnResult').classList.add('show');
+  }
+  function log(msg,cls=''){
+    const d=document.createElement('div');d.className=`logEntry ${cls}`;d.textContent=msg;$('log').appendChild(d);$('log').scrollTop=$('log').scrollHeight;
+  }
+
+  function render(){
+    renderPlayers();renderArena();renderHand();renderMetrics();
+  }
+
+  function renderPlayers(){
+    const current=(state.phase==='human-turn'||state.phase==='ai-turn')?currentPlayerIndex():-1;
+    const fallback=PLAYER_NAMES.map((name,index)=>({name,index,shields:0,shieldSavers:[],hand:[],eliminated:false}));
+    const players=state.players.length?state.players:fallback;
+    const seatIds=['seatSouth','seatWest','seatNorth','seatEast'];
+    players.forEach((p,i)=>{
+      const host=$(seatIds[i]);
+      let shields='';
+      for(let x=0;x<5;x++) shields+=`<span class="shield ${x<p.shields?'':'broken'}" title="Original shield"></span>`;
+      for(let x=0;x<(p.shieldSavers?.length||0);x++) shields+=`<span class="shield saver" title="Shield Saver"></span>`;
+      const total=(p.shields||0)+(p.shieldSavers?.length||0);
+      host.innerHTML=`<div class="playerBox ${current===i?'active':''} ${p.eliminated?'eliminated':''}">
+        <div class="playerName"><span class="pname">${p.name}</span><span>${state.scores[i]||0} POINTS</span></div>
+        <div class="playerMeta"><span class="handBadge"><span class="handIcon"><i></i><i></i><i></i></span><span class="handNumber">${p.hand?.length||0}</span></span><span>${p.eliminated?'OUT':`${total} SHIELDS`}</span></div>
+        <div class="shieldRow">${shields}</div>
+      </div>`;
+    });
+  }
+
+  function renderArena(){
+    const a=$('arena');a.innerHTML='';
+    const positions=['south','west','north','east'];
+    for(let i=0;i<4;i++){
+      const play=currentPlayFor(i); const power=play?effectivePower(play):-Infinity;
+      const turn=(state.phase==='human-turn'||state.phase==='ai-turn')&&currentPlayerIndex()===i;
+      const d=document.createElement('div');d.className=`trickSlot ${positions[i]} ${turn?'turn':''}`;
+      const effectCards=(play?.effects||[]).map(e=>{
+        let label=e.card.name;
+        if(e.card.effect==='boost') label=`+${e.card.value}`;
+        else if(e.card.effect==='draw1') label='DRAW 1';
+        else if(e.card.effect==='draw2') label='DRAW 2';
+        else if(e.card.effect==='destroy') label='DESTROY';
+        else if(e.card.effect==='negate') label=e.consumed?'NEGATE ✓':'NEGATE';
+        else if(e.card.effect==='shield') label='SHIELD';
+        return `<span class="effectMini ${e.card.effect==='boost'?'boost':''} ${e.nullified?'disabled':''} ${e.destroyed?'destroyed':''}">${label}</span>`;
+      }).join('');
+      d.innerHTML=`<div class="powerCaption">Total power</div><div class="powerTotal">${Number.isFinite(power)?power:'—'}</div><div class="playRow">${play?.unit?`<div class="miniUnit">${play.unit.value}</div>`:`<div class="miniUnit empty">NO<br>UNIT</div>`}<div class="effectStack">${effectCards}</div></div>`;
+      a.appendChild(d);
+    }
+  }
+
+  function cardDescription(c){
+    if(c.effect==='negate') return 'Negate future effect';
+    if(c.effect==='destroy') return 'Destroy previous effect';
+    return '';
+  }
+
+  function handCorner(c){
+    if(c.type==='unit') return `${c.value}<small>UNIT</small>`;
+    if(c.effect==='boost') return `+${c.value}<small>FX</small>`;
+    if(c.effect==='draw1') return `D1<small>FX</small>`;
+    if(c.effect==='draw2') return `D2<small>FX</small>`;
+    if(c.effect==='shield') return `S<small>FX</small>`;
+    if(c.effect==='destroy') return `X<small>FX</small>`;
+    if(c.effect==='negate') return `Ø<small>FX</small>`;
+    return `E<small>FX</small>`;
+  }
+
+  function renderHand(){
+    const h=$('hand');h.innerHTML='';
+    const p=state.players[0];
+    if(!p){$('handCount').textContent='';return}
+    if(selectedHandIndex!=null && selectedHandIndex>=p.hand.length) selectedHandIndex=null;
+    $('handCount').textContent=`${p.hand.length} cards`;
+    const play=currentPlayFor(0);
+    const effectStep = state.phase==='human-turn' && state.effectPlayedThisTurn===0 && !(play&&play.unit);
+    p.hand.forEach((c,i)=>{
+      const can=playableHumanCard(c);
+      const highlight = effectStep && c.type==='effect' && can;
+      const d=document.createElement('button');
+      d.className=`card ${c.type==='unit'?'unit':'effect'} ${c.effect==='shield'?'shieldCard':''} ${can?'':'unplayable'} ${highlight?'effectChoice':''} ${selectedHandIndex===i?'selected':''}`;
+      d.disabled=!can;
+      let middle='';
+      if(c.type==='unit') middle=`<div class="cardBig">${c.value}</div>`;
+      else if(c.effect==='boost') middle=`<div class="cardBig">+${c.value}</div>`;
+      else if(c.effect==='draw1') middle=`<div class="cardLabel">DRAW 1</div>`;
+      else if(c.effect==='draw2') middle=`<div class="cardLabel">DRAW 2</div>`;
+      else if(c.effect==='shield') middle=`<div class="cardLabel">SHIELD<br>SAVER</div>`;
+      else if(c.effect==='destroy') middle=`<div class="cardLabel">DESTROY</div>`;
+      else if(c.effect==='negate') middle=`<div class="cardLabel">NEGATE</div>`;
+      d.innerHTML=`<div class="corner">${handCorner(c)}</div><div class="cardType">${c.type==='unit'?'Unit':'Effect'}</div>${middle}<div class="cardDesc">${cardDescription(c)}</div>`;
+      d.onclick=()=>humanCardClick(i);h.appendChild(d);
+    });
+    $('actionHint').textContent = state.phase==='human-turn' ? (selectedHandIndex!=null?'Tap selected card again to play':effectStep?'Effects are highlighted — tap once to inspect':'Tap a card to inspect, then again to play') : '';
+  }
+
+  function renderMetrics(){
+    $('roundTop').textContent=`Round ${state.deal} / ${state.maxDeals}`;
+  }
+
+  $('newMatchBtn').onclick=()=>{
+    if(state.phase!=='idle' && !confirm('Restart the current match?')) return;
+    newMatch();
+  };
+  $('nextBtn').onclick=continueGame;
+  $('rulesBtn').onclick=()=>openModal('rulesModal');
+  $('logBtn').onclick=()=>openModal('logModal');
+
+  function openModal(id){$(id).classList.add('show')}
+  function closeModal(id){$(id).classList.remove('show')}
+  document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeModal(b.dataset.close));
+  document.querySelectorAll('.modalBackdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m) closeModal(m.id)}));
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){
+      document.querySelectorAll('.modalBackdrop.show').forEach(m=>closeModal(m.id));
+      if(selectedHandIndex!=null){selectedHandIndex=null;renderHand();}
+    }
+  });
+  document.addEventListener('pointerdown',e=>{
+    if(selectedHandIndex==null) return;
+    if(e.target.closest('.card')) return;
+    if(e.target.closest('.modal') || e.target.closest('.topbar') || e.target.closest('.targetBox')) return;
+    selectedHandIndex=null;
+    renderHand();
+    if(state.phase==='human-turn') setStatus('Your turn: choose a card.');
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
